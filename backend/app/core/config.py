@@ -2,8 +2,10 @@
 Application configuration settings
 """
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import field_validator
+from typing import List, Any
 import os
+import json
 
 
 class Settings(BaseSettings):
@@ -36,6 +38,19 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        """Parse CORS origins from string or list"""
+        if isinstance(v, str):
+            try:
+                # Try parsing as JSON array
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Fall back to comma-separated values
+                return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
 
     # Email
     SENDGRID_API_KEY: str = ""

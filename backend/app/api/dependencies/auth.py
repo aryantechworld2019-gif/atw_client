@@ -7,6 +7,9 @@ from app.core.security import decode_token
 from app.models.user import User, UserRole
 from typing import Optional
 from bson import ObjectId
+import logging
+
+logger = logging.getLogger(__name__)
 
 # HTTP Bearer token
 security = HTTPBearer()
@@ -38,7 +41,8 @@ async def get_current_user(
     # Get user from database
     try:
         user = await User.get(ObjectId(user_id))
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error retrieving user {user_id}: {e}", exc_info=True)
         raise credentials_exception
 
     if user is None:
