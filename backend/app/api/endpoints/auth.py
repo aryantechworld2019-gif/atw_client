@@ -8,8 +8,10 @@ from app.core.security import (
     verify_password,
     get_password_hash,
     create_access_token,
-    create_refresh_token
+    create_refresh_token,
+    decode_token
 )
+from app.api.dependencies.auth import get_current_user
 from datetime import datetime
 from bson import ObjectId
 
@@ -129,8 +131,6 @@ async def refresh_token(refresh_token: str):
     """
     Refresh access token
     """
-    from app.core.security import decode_token
-
     # Decode refresh token
     payload = decode_token(refresh_token)
 
@@ -156,8 +156,6 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     """
     Get current user information
     """
-    from app.api.dependencies.auth import get_current_user
-
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
