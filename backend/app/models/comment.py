@@ -6,11 +6,12 @@ from pydantic import Field, BaseModel
 from typing import Optional, List
 from datetime import datetime
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class Mention(BaseModel):
     """User mention in comment"""
-    user_id: ObjectId
+    user_id: PyObjectId
     user_name: str
 
 
@@ -26,7 +27,7 @@ class Comment(Document):
     """Comment document model"""
 
     # References
-    query_id: ObjectId
+    query_id: PyObjectId
     user_id: ObjectId
     user_role: str
     user_name: str

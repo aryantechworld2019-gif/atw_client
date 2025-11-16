@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class ClientStatus(str, Enum):
@@ -42,7 +43,7 @@ class BrandColors(BaseModel):
 
 class AdditionalUser(BaseModel):
     """Additional client user"""
-    user_id: ObjectId
+    user_id: PyObjectId
     name: str
     email: str
     role: str
@@ -51,7 +52,7 @@ class AdditionalUser(BaseModel):
 
 class AssignedDeveloper(BaseModel):
     """Assigned developer information"""
-    developer_id: ObjectId
+    developer_id: PyObjectId
     is_primary: bool = False
     assigned_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -81,7 +82,7 @@ class Client(Document):
     """Client document model"""
 
     # Reference to User
-    user_id: ObjectId
+    user_id: PyObjectId
 
     # Company Details
     company_name: str
@@ -98,7 +99,7 @@ class Client(Document):
     brand_colors: BrandColors = Field(default_factory=BrandColors)
 
     # Account Management
-    account_manager_id: Optional[ObjectId] = None
+    account_manager_id: Optional[PyObjectId] = None
     status: ClientStatus = ClientStatus.ACTIVE
 
     # Additional Users

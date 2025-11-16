@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class AvailabilityStatus(str, Enum):
@@ -64,7 +65,7 @@ class Performance(BaseModel):
 
 class AssignedClient(BaseModel):
     """Assigned client information"""
-    client_id: ObjectId
+    client_id: PyObjectId
     is_primary: bool = False
     assigned_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -73,7 +74,7 @@ class Developer(Document):
     """Developer document model"""
 
     # Reference to User
-    user_id: ObjectId
+    user_id: PyObjectId
 
     # Developer Details
     full_name: str

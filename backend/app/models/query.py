@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class QueryPriority(str, Enum):
@@ -40,7 +41,7 @@ class QueryStatus(str, Enum):
 class StatusHistory(BaseModel):
     """Status change history"""
     status: QueryStatus
-    changed_by: ObjectId
+    changed_by: PyObjectId
     changed_at: datetime = Field(default_factory=datetime.utcnow)
     comment: Optional[str] = None
 
@@ -56,12 +57,12 @@ class SLAInfo(BaseModel):
 
 class Attachment(BaseModel):
     """File attachment"""
-    attachment_id: ObjectId = Field(default_factory=ObjectId)
+    attachment_id: PyObjectId = Field(default_factory=ObjectId)
     file_name: str
     file_url: str
     file_size: int
     file_type: str
-    uploaded_by: ObjectId
+    uploaded_by: PyObjectId
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -99,9 +100,9 @@ class Query(Document):
     ticket_number: str
 
     # References
-    client_id: ObjectId
+    client_id: PyObjectId
     created_by: ObjectId
-    assigned_developer_id: Optional[ObjectId] = None
+    assigned_developer_id: Optional[PyObjectId] = None
 
     # Query Details
     title: str
@@ -146,7 +147,7 @@ class Query(Document):
     internal_notes: Optional[str] = None
 
     # Related Queries
-    related_queries: List[ObjectId] = Field(default_factory=list)
+    related_queries: List[PyObjectId] = Field(default_factory=list)
 
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)

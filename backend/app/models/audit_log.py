@@ -7,6 +7,7 @@ from typing import Optional, Any
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class ActionType(str, Enum):
@@ -34,12 +35,12 @@ class AuditLog(Document):
     """Audit Log document model"""
 
     # User performing the action
-    user_id: ObjectId
+    user_id: PyObjectId
     action_type: ActionType
 
     # Entity Details
     entity_type: EntityType
-    entity_id: ObjectId
+    entity_id: PyObjectId
 
     # Change Details
     changes: Optional[dict] = None

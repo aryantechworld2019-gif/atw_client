@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class InvoiceStatus(str, Enum):
@@ -37,8 +38,8 @@ class Invoice(Document):
 
     # Invoice Information
     invoice_number: str
-    client_id: ObjectId
-    package_id: Optional[ObjectId] = None
+    client_id: PyObjectId
+    package_id: Optional[PyObjectId] = None
 
     # Billing Period
     billing_period: BillingPeriod

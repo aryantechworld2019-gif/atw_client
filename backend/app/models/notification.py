@@ -7,6 +7,7 @@ from typing import Optional
 from datetime import datetime, timedelta
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class NotificationType(str, Enum):
@@ -55,10 +56,10 @@ class Notification(Document):
     """Notification document model"""
 
     # Recipient
-    user_id: ObjectId
+    user_id: PyObjectId
 
     # Reference (optional)
-    query_id: Optional[ObjectId] = None
+    query_id: Optional[PyObjectId] = None
 
     # Notification Details
     title: str

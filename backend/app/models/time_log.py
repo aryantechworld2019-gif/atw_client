@@ -7,6 +7,7 @@ from typing import Optional
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class LogType(str, Enum):
@@ -41,9 +42,9 @@ class TimeLog(Document):
     """Time Log document model"""
 
     # References
-    query_id: ObjectId
+    query_id: PyObjectId
     developer_id: ObjectId
-    client_id: ObjectId
+    client_id: PyObjectId
 
     # Time Tracking
     time_spent_minutes: int
@@ -60,7 +61,7 @@ class TimeLog(Document):
 
     # Approval Workflow
     approval_status: ApprovalStatus = ApprovalStatus.PENDING
-    approved_by: Optional[ObjectId] = None
+    approved_by: Optional[PyObjectId] = None
     approval_notes: Optional[str] = None
     approved_at: Optional[datetime] = None
     rejection_reason: Optional[str] = None
@@ -70,7 +71,7 @@ class TimeLog(Document):
 
     # Hour Deduction
     hours_deducted_from_package: bool = False
-    package_id: Optional[ObjectId] = None
+    package_id: Optional[PyObjectId] = None
 
     # Timestamps
     logged_at: datetime = Field(default_factory=datetime.utcnow)

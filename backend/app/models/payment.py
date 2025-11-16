@@ -7,6 +7,7 @@ from typing import Optional
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class PaymentMethod(str, Enum):
@@ -45,7 +46,7 @@ class Payment(Document):
     """Payment document model"""
 
     # References
-    invoice_id: ObjectId
+    invoice_id: PyObjectId
     client_id: ObjectId
 
     # Payment Details

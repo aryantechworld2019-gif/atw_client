@@ -7,6 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from bson import ObjectId
+from app.core.types import PyObjectId
 
 
 class PackageType(str, Enum):
@@ -45,15 +46,15 @@ class HourAdjustment(BaseModel):
     hours_changed: float
     adjustment_type: AdjustmentType
     reason: str
-    adjusted_by: ObjectId
+    adjusted_by: PyObjectId
     adjusted_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class HourDeduction(BaseModel):
     """Hour deduction record"""
-    query_id: ObjectId
+    query_id: PyObjectId
     hours_deducted: float
-    time_log_id: ObjectId
+    time_log_id: PyObjectId
     deducted_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -70,7 +71,7 @@ class MaintenancePackage(Document):
     """Maintenance Package document model"""
 
     # Reference to Client
-    client_id: ObjectId
+    client_id: PyObjectId
 
     # Package Details
     package_type: PackageType
