@@ -12,16 +12,15 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - mongodb_config:/data/configdb
     networks:
       - atw_network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis Cache & Message Broker
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: atw_redis
@@ -53,7 +52,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=True
       - ENVIRONMENT=development
-      - SECRET_KEY=your-secret-key-change-in-production
+      - SECRET_KEY=dev-secret-key-change-in-production-12345678
       - CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
     volumes:
       - ./backend:/app
@@ -85,53 +84,9 @@ services:
     networks:
       - atw_network
 
-  # Celery Worker (Background Tasks)
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: atw_celery_worker
-    restart: unless-stopped
-    command: celery -A app.celery_app worker --loglevel=info
-    environment:
-      - MONGODB_URL=mongodb://admin:admin123@mongodb:27017/aryan_tech_db?authSource=admin
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - atw_network
-
-  # Celery Beat (Scheduled Tasks)
-  celery_beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: atw_celery_beat
-    restart: unless-stopped
-    command: celery -A app.celery_app beat --loglevel=info
-    environment:
-      - MONGODB_URL=mongodb://admin:admin123@mongodb:27017/aryan_tech_db?authSource=admin
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - mongodb
-      - redis
-    networks:
-      - atw_network
-
 # Volumes
 volumes:
   mongodb_data:
-    driver: local
-  mongodb_config:
     driver: local
   redis_data:
     driver: local
