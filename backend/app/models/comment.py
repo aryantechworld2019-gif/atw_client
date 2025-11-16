@@ -28,7 +28,7 @@ class Comment(Document):
 
     # References
     query_id: PyObjectId
-    user_id: ObjectId
+    user_id: PyObjectId
     user_role: str
     user_name: str
 

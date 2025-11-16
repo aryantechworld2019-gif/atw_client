@@ -101,7 +101,7 @@ class Query(Document):
 
     # References
     client_id: PyObjectId
-    created_by: ObjectId
+    created_by: PyObjectId
     assigned_developer_id: Optional[PyObjectId] = None
 
     # Query Details

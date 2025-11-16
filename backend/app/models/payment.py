@@ -47,7 +47,7 @@ class Payment(Document):
 
     # References
     invoice_id: PyObjectId
-    client_id: ObjectId
+    client_id: PyObjectId
 
     # Payment Details
     amount: float

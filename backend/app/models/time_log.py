@@ -43,7 +43,7 @@ class TimeLog(Document):
 
     # References
     query_id: PyObjectId
-    developer_id: ObjectId
+    developer_id: PyObjectId
     client_id: PyObjectId
 
     # Time Tracking
