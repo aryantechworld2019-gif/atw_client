@@ -1,136 +1,279 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../../components/Layout'
-import { Save, X } from 'lucide-react'
+import { Save, X, Code2, DollarSign, Clock } from 'lucide-react'
+import { developersAPI } from '../../services/apiService'
+
+const COMMON_SKILLS = [
+  'React',
+  'TypeScript',
+  'JavaScript',
+  'Node.js',
+  'Python',
+  'FastAPI',
+  'MongoDB',
+  'PostgreSQL',
+  'Docker',
+  'AWS',
+  'Git',
+  'REST API',
+  'GraphQL',
+  'Next.js',
+  'Vue.js',
+  'Angular',
+  'Express.js',
+  'Django',
+  'Flask',
+  'Java',
+  'Spring Boot',
+  'Go',
+  'Rust',
+  'Kubernetes',
+  'Redis',
+  'Elasticsearch',
+]
 
 export default function AddDeveloperPage() {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    skills: '',
+    user_id: '',
+    skills: [] as string[],
+    custom_skill: '',
     hourly_rate: '',
-    availability_hours: '',
+    availability_hours: '40',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const toggleSkill = (skill: string) => {
+    if (formData.skills.includes(skill)) {
+      setFormData({
+        ...formData,
+        skills: formData.skills.filter((s) => s !== skill),
+      })
+    } else {
+      setFormData({
+        ...formData,
+        skills: [...formData.skills, skill],
+      })
+    }
+  }
+
+  const addCustomSkill = () => {
+    if (formData.custom_skill.trim() && !formData.skills.includes(formData.custom_skill.trim())) {
+      setFormData({
+        ...formData,
+        skills: [...formData.skills, formData.custom_skill.trim()],
+        custom_skill: '',
+      })
+    }
+  }
+
+  const removeSkill = (skill: string) => {
+    setFormData({
+      ...formData,
+      skills: formData.skills.filter((s) => s !== skill),
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Add developer:', formData)
-    navigate('/developers')
+    setLoading(true)
+
+    try {
+      if (formData.skills.length === 0) {
+        alert('Please select at least one skill')
+        setLoading(false)
+        return
+      }
+
+      await developersAPI.create({
+        user_id: formData.user_id,
+        skills: formData.skills,
+        hourly_rate: parseFloat(formData.hourly_rate),
+        availability_hours: parseFloat(formData.availability_hours),
+      })
+
+      alert('Developer created successfully!')
+      navigate('/developers')
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Failed to create developer')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Add New Developer</h1>
-          <p className="text-gray-600 mt-1">Add a new developer to your team</p>
+          <p className="text-gray-600 mt-1">Create a new developer profile</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="card">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Code2 className="w-5 h-5 mr-2" />
+              Developer Information
+            </h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
+                  User ID *
                 </label>
                 <input
                   type="text"
                   required
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  value={formData.user_id}
+                  onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
                   className="input-field"
-                  placeholder="Enter full name"
+                  placeholder="Enter user ID from users list"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  User ID can be found in the users management section
+                </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="input-field"
-                  placeholder="developer@example.com"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="input-field"
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hourly Rate ($) *
+                  <DollarSign className="w-4 h-4 inline mr-1" />
+                  Hourly Rate (USD) *
                 </label>
                 <input
                   type="number"
+                  step="0.01"
+                  min="0"
                   required
                   value={formData.hourly_rate}
                   onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
                   className="input-field"
-                  placeholder="50"
+                  placeholder="50.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  Weekly Availability (Hours) *
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="168"
+                  required
+                  value={formData.availability_hours}
+                  onChange={(e) => setFormData({ ...formData, availability_hours: e.target.value })}
+                  className="input-field"
+                  placeholder="40"
                 />
               </div>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Skills (comma-separated) *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.skills}
-                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                className="input-field"
-                placeholder="React, TypeScript, Node.js, MongoDB"
-              />
-              <p className="text-xs text-gray-500 mt-1">Enter skills separated by commas</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Weekly Availability (hours) *
-              </label>
-              <input
-                type="number"
-                required
-                value={formData.availability_hours}
-                onChange={(e) => setFormData({ ...formData, availability_hours: e.target.value })}
-                className="input-field"
-                placeholder="40"
-              />
-            </div>
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
+          {/* Skills */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Skills *</h3>
+
+            {/* Common Skills */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                Select from common skills:
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {COMMON_SKILLS.map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    onClick={() => toggleSkill(skill)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      formData.skills.includes(skill)
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Skill Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add custom skill:
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={formData.custom_skill}
+                  onChange={(e) => setFormData({ ...formData, custom_skill: e.target.value })}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustomSkill()
+                    }
+                  }}
+                  className="input-field flex-1"
+                  placeholder="Enter skill name"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomSkill}
+                  className="btn-secondary"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Selected Skills */}
+            {formData.skills.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selected Skills ({formData.skills.length}):
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {formData.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary-100 text-primary-800 text-sm font-medium"
+                    >
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(skill)}
+                        className="ml-2 text-primary-600 hover:text-primary-800"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={() => navigate('/developers')}
               className="btn-secondary flex items-center space-x-2"
+              disabled={loading}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
             </button>
-            <button type="submit" className="btn-primary flex items-center space-x-2">
+            <button
+              type="submit"
+              className="btn-primary flex items-center space-x-2"
+              disabled={loading}
+            >
               <Save className="w-5 h-5" />
-              <span>Add Developer</span>
+              <span>{loading ? 'Creating...' : 'Create Developer'}</span>
             </button>
           </div>
         </form>

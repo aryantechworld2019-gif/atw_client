@@ -28,6 +28,7 @@ import ReportsOverviewPage from './pages/reports/ReportsOverviewPage'
 import AddDeveloperPage from './pages/developers/AddDeveloperPage'
 import AddClientPage from './pages/clients/AddClientPage'
 import CreateQueryPage from './pages/queries/CreateQueryPage'
+import CreateMaintenancePackagePage from './pages/maintenance/CreateMaintenancePackagePage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -127,7 +128,7 @@ function App() {
           path="/maintenance/packages/create"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <CreateMaintenancePackagePage />
             </ProtectedRoute>
           }
         />
