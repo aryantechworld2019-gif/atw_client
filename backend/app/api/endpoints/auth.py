@@ -1,7 +1,7 @@
 """
 Authentication endpoints
 """
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.models.user import User, UserRole
 from app.core.security import (
@@ -11,7 +11,9 @@ from app.core.security import (
     create_refresh_token,
     decode_token
 )
+from app.core.validation import validate_password_strength
 from app.api.dependencies.auth import get_current_user
+from app.core.rate_limit import limiter
 from datetime import datetime
 from bson import ObjectId
 
@@ -19,10 +21,20 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate):
+@limiter.limit("5/hour")  # Limit registrations to prevent abuse
+async def register(request: Request, user_data: UserCreate):
     """
     Register a new user
     """
+    # Validate password strength
+    try:
+        validate_password_strength(user_data.password)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
     # Check if user already exists
     existing_user = await User.find_one(User.email == user_data.email)
     if existing_user:
@@ -71,7 +83,8 @@ async def register(user_data: UserCreate):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: UserLogin):
+@limiter.limit("10/minute")  # Prevent brute force attacks
+async def login(request: Request, credentials: UserLogin):
     """
     User login
     """

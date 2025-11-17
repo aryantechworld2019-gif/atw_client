@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "your-secret-key-change-this-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # Reduced from 30 for better security
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS
@@ -50,6 +50,52 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 # Fall back to comma-separated values
                 return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
+
+    @field_validator('SECRET_KEY')
+    @classmethod
+    def validate_secret_key(cls, v: str, info) -> str:
+        """Validate SECRET_KEY is production-ready"""
+        environment = info.data.get('ENVIRONMENT', 'development')
+
+        if v == "your-secret-key-change-this-in-production":
+            if environment == "production":
+                raise ValueError(
+                    "SECRET_KEY must be changed from default value in production. "
+                    "Generate: python -c 'import secrets; print(secrets.token_hex(32))'"
+                )
+
+        if len(v) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters")
+
+        return v
+
+    @field_validator('DEBUG')
+    @classmethod
+    def validate_debug_mode(cls, v: bool, info) -> bool:
+        """Ensure DEBUG is False in production"""
+        environment = info.data.get('ENVIRONMENT', 'development')
+
+        if environment == "production" and v:
+            raise ValueError("DEBUG must be False in production environment")
+
+        return v
+
+    @field_validator('CORS_ORIGINS')
+    @classmethod
+    def validate_cors_production(cls, v: List[str], info) -> List[str]:
+        """Validate CORS origins for production"""
+        environment = info.data.get('ENVIRONMENT', 'development')
+
+        if environment == "production":
+            localhost_patterns = ["localhost", "127.0.0.1", "0.0.0.0"]
+            for origin in v:
+                if any(pattern in origin for pattern in localhost_patterns):
+                    raise ValueError(
+                        f"CORS origin '{origin}' contains localhost in production. "
+                        "Use production domains only."
+                    )
+
         return v
 
     # Email

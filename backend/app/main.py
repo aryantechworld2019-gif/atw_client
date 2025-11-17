@@ -3,16 +3,34 @@ Main FastAPI application
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
+from app.middleware.security import SecurityHeadersMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.core.rate_limit import limiter
 import logging
+from pythonjsonlogger import jsonlogger
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO if settings.DEBUG else logging.WARNING,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# Configure structured logging
+logHandler = logging.StreamHandler()
+if settings.ENVIRONMENT == "production":
+    # Use JSON logging in production
+    formatter = jsonlogger.JsonFormatter(
+        '%(asctime)s %(name)s %(levelname)s %(message)s'
+    )
+else:
+    # Use standard logging in development
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+logHandler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO if settings.DEBUG else logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +43,13 @@ app = FastAPI(
     redoc_url="/api/redoc" if settings.DEBUG else None,
 )
 
+# Add rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add security headers middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +57,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Count", "X-Page", "X-Per-Page"],
 )
 
 
@@ -77,13 +103,51 @@ async def root():
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint
+    Basic health check endpoint - liveness probe
     """
     return {
         "status": "healthy",
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT
     }
+
+
+@app.get("/health/live")
+async def liveness_check():
+    """
+    Kubernetes liveness probe
+    """
+    return {"status": "alive"}
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    """
+    Kubernetes readiness probe - checks dependencies
+    """
+    from app.core.database import db
+
+    try:
+        # Check MongoDB connection
+        await db.client.admin.command('ping')
+
+        # TODO: Add Redis check when implemented
+        # await redis.ping()
+
+        return {
+            "status": "ready",
+            "mongodb": "connected",
+            "version": settings.APP_VERSION
+        }
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "not_ready",
+                "error": "Database connection failed" if not settings.DEBUG else str(e)
+            }
+        )
 
 
 @app.get("/api/v1")
