@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, AlertCircle, Clock, CheckCircle } from 'lucide-react'
 import { queriesAPI } from '../../services/apiService'
+import { showToast } from '../../utils/toast'
 
-type QueryStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
+type QueryStatus = 'OPEN' | 'IN_PROGRESS' | 'ON_HOLD' | 'FIXED' | 'CLOSED' | 'REOPENED'
 
 interface Query {
   id: string
   title: string
   description: string
-  type: string
+  category: string
   priority: string
   status: QueryStatus
   estimated_hours?: number
@@ -24,76 +26,77 @@ interface Query {
 export default function UpdateQueryStatusPage() {
   const navigate = useNavigate()
   const { queryId } = useParams<{ queryId: string }>()
-  const [loading, setLoading] = useState(false)
-  const [query, setQuery] = useState<Query | null>(null)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     status: 'OPEN' as QueryStatus,
     resolution: '',
     actual_hours: '',
   })
 
-  useEffect(() => {
-    if (queryId) {
-      loadQuery()
-    }
-  }, [queryId])
+  // Fetch query details
+  const { data: query, isLoading } = useQuery<Query>({
+    queryKey: ['query', queryId],
+    queryFn: () => queriesAPI.getById(queryId!),
+    enabled: !!queryId,
+  })
 
-  const loadQuery = async () => {
-    try {
-      const data = await queriesAPI.getById(queryId!)
-      setQuery(data)
+  // Update form when query data loads
+  useEffect(() => {
+    if (query) {
       setFormData({
-        status: data.status,
-        resolution: data.resolution || '',
-        actual_hours: data.actual_hours?.toString() || '',
+        status: query.status,
+        resolution: query.resolution || '',
+        actual_hours: query.actual_hours?.toString() || '',
       })
-    } catch (error) {
-      console.error('Failed to load query:', error)
-      alert('Failed to load query details')
-      navigate('/queries')
     }
-  }
+  }, [query])
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => queriesAPI.update(queryId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queries'] })
+      queryClient.invalidateQueries({ queryKey: ['query', queryId] })
+      showToast.success('Query status updated successfully!')
+      navigate('/queries')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to update query status')
+    },
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      const updateData: any = {
-        status: formData.status,
-      }
-
-      if (formData.resolution) {
-        updateData.resolution = formData.resolution
-      }
-
-      if (formData.actual_hours) {
-        updateData.actual_hours = parseFloat(formData.actual_hours)
-      }
-
-      await queriesAPI.update(queryId!, updateData)
-
-      alert('Query status updated successfully!')
-      navigate('/queries')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to update query status')
-    } finally {
-      setLoading(false)
+    const updateData: any = {
+      status: formData.status,
     }
+
+    if (formData.resolution) {
+      updateData.resolution = formData.resolution
+    }
+
+    if (formData.actual_hours) {
+      updateData.actual_hours = parseFloat(formData.actual_hours)
+    }
+
+    updateMutation.mutate(updateData)
   }
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case 'OPEN': return 'bg-blue-100 text-blue-800'
       case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-800'
-      case 'RESOLVED': return 'bg-green-100 text-green-800'
+      case 'ON_HOLD': return 'bg-orange-100 text-orange-800'
+      case 'FIXED': return 'bg-green-100 text-green-800'
       case 'CLOSED': return 'bg-gray-100 text-gray-800'
+      case 'REOPENED': return 'bg-purple-100 text-purple-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toUpperCase()) {
       case 'URGENT': return 'bg-red-100 text-red-800'
       case 'HIGH': return 'bg-orange-100 text-orange-800'
       case 'MEDIUM': return 'bg-yellow-100 text-yellow-800'
@@ -102,11 +105,24 @@ export default function UpdateQueryStatusPage() {
     }
   }
 
-  if (!query) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500">Loading query details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (!query) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <p className="text-red-600">Query not found</p>
+          <button onClick={() => navigate('/queries')} className="mt-4 btn-primary">
+            Back to Queries
+          </button>
         </div>
       </Layout>
     )
@@ -147,8 +163,8 @@ export default function UpdateQueryStatusPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <p className="text-gray-900">{query.type}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <p className="text-gray-900">{query.category}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Hours</label>
@@ -183,7 +199,7 @@ export default function UpdateQueryStatusPage() {
                   Query Status *
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as QueryStatus[]).map((status) => (
+                  {(['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'FIXED', 'CLOSED', 'REOPENED'] as QueryStatus[]).map((status) => (
                     <button
                       key={status}
                       type="button"
@@ -203,8 +219,10 @@ export default function UpdateQueryStatusPage() {
                       <p className="text-xs text-gray-500 mt-1">
                         {status === 'OPEN' && 'Query is open and awaiting action'}
                         {status === 'IN_PROGRESS' && 'Currently working on this query'}
-                        {status === 'RESOLVED' && 'Query has been resolved'}
+                        {status === 'ON_HOLD' && 'Query is on hold temporarily'}
+                        {status === 'FIXED' && 'Query has been fixed'}
                         {status === 'CLOSED' && 'Query is closed and completed'}
+                        {status === 'REOPENED' && 'Query was reopened'}
                       </p>
                     </button>
                   ))}
@@ -242,16 +260,16 @@ export default function UpdateQueryStatusPage() {
           </div>
 
           {/* Resolution Notes */}
-          {(formData.status === 'RESOLVED' || formData.status === 'CLOSED') && (
+          {(formData.status === 'FIXED' || formData.status === 'CLOSED') && (
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Resolution Details</h3>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Resolution Notes {formData.status === 'RESOLVED' ? '*' : ''}
+                  Resolution Notes {formData.status === 'FIXED' ? '*' : ''}
                 </label>
                 <textarea
-                  required={formData.status === 'RESOLVED'}
+                  required={formData.status === 'FIXED'}
                   value={formData.resolution}
                   onChange={(e) => setFormData({ ...formData, resolution: e.target.value })}
                   className="input-field"
@@ -271,7 +289,7 @@ export default function UpdateQueryStatusPage() {
               type="button"
               onClick={() => navigate('/queries')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={updateMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -279,10 +297,10 @@ export default function UpdateQueryStatusPage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={updateMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Updating...' : 'Update Query'}</span>
+              <span>{updateMutation.isPending ? 'Updating...' : 'Update Query'}</span>
             </button>
           </div>
         </form>

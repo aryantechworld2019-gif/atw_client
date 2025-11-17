@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, FileText, Plus, Trash2 } from 'lucide-react'
 import { invoicesAPI } from '../../services/apiService'
+import { showToast } from '../../utils/toast'
 
 interface LineItem {
   description: string
@@ -12,7 +14,7 @@ interface LineItem {
 
 export default function CreateInvoicePage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     client_id: '',
     package_id: '',
@@ -55,43 +57,44 @@ export default function CreateInvoicePage() {
     return calculateSubtotal() + calculateTax()
   }
 
+  const createMutation = useMutation({
+    mutationFn: (data: any) => invoicesAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      showToast.success('Invoice created successfully!')
+      navigate('/invoices')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to create invoice')
+    },
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      // Validate line items
-      const hasEmptyItems = lineItems.some(item => !item.description || item.unit_price <= 0)
-      if (hasEmptyItems) {
-        alert('Please fill in all line items with valid data')
-        setLoading(false)
-        return
-      }
-
-      await invoicesAPI.create({
-        client_id: formData.client_id,
-        package_id: formData.package_id || undefined,
-        billing_period: {
-          start_date: new Date(formData.billing_period_start).toISOString(),
-          end_date: new Date(formData.billing_period_end).toISOString(),
-        },
-        line_items: lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-        })),
-        tax_rate: parseFloat(formData.tax_rate),
-        currency: formData.currency,
-        due_date: new Date(formData.due_date).toISOString(),
-      })
-
-      alert('Invoice created successfully!')
-      navigate('/invoices')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to create invoice')
-    } finally {
-      setLoading(false)
+    // Validate line items
+    const hasEmptyItems = lineItems.some(item => !item.description || item.unit_price <= 0)
+    if (hasEmptyItems) {
+      showToast.error('Please fill in all line items with valid data')
+      return
     }
+
+    createMutation.mutate({
+      client_id: formData.client_id,
+      package_id: formData.package_id || undefined,
+      billing_period: {
+        start_date: new Date(formData.billing_period_start).toISOString(),
+        end_date: new Date(formData.billing_period_end).toISOString(),
+      },
+      line_items: lineItems.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      })),
+      tax_rate: parseFloat(formData.tax_rate),
+      currency: formData.currency,
+      due_date: new Date(formData.due_date).toISOString(),
+    })
   }
 
   return (
@@ -324,7 +327,7 @@ export default function CreateInvoicePage() {
               type="button"
               onClick={() => navigate('/invoices')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -332,10 +335,10 @@ export default function CreateInvoicePage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Creating...' : 'Create Invoice'}</span>
+              <span>{createMutation.isPending ? 'Creating...' : 'Create Invoice'}</span>
             </button>
           </div>
         </form>

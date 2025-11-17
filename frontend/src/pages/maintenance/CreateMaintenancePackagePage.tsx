@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, Package, DollarSign, Calendar, Clock } from 'lucide-react'
 import { maintenanceAPI } from '../../services/apiService'
+import { showToast } from '../../utils/toast'
 
 type PackageType = 'BASIC' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE' | 'CUSTOM'
 type BillingCycle = 'MONTHLY' | 'QUARTERLY' | 'ANNUAL'
 
 export default function CreateMaintenancePackagePage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     client_id: '',
     package_type: 'STANDARD' as PackageType,
@@ -28,38 +30,40 @@ export default function CreateMaintenancePackagePage() {
     max_concurrent_queries: '3',
   })
 
+  const createMutation = useMutation({
+    mutationFn: (data: any) => maintenanceAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-packages'] })
+      showToast.success('Maintenance package created successfully!')
+      navigate('/maintenance/packages')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to create maintenance package')
+    },
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      await maintenanceAPI.create({
-        client_id: formData.client_id,
-        package_type: formData.package_type,
-        package_name: formData.package_name,
-        total_hours: parseFloat(formData.total_hours),
-        price: parseFloat(formData.price),
-        currency: formData.currency,
-        billing_cycle: formData.billing_cycle,
-        start_date: new Date(formData.start_date).toISOString(),
-        end_date: new Date(formData.end_date).toISOString(),
-        auto_renew: formData.auto_renew,
-        features: {
-          priority_support: formData.priority_support,
-          support_24x7: formData.support_24x7,
-          dedicated_developer: formData.dedicated_developer,
-          response_time_sla: formData.response_time_sla,
-          max_concurrent_queries: parseInt(formData.max_concurrent_queries),
-        },
-      })
-
-      alert('Maintenance package created successfully!')
-      navigate('/maintenance/packages')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to create maintenance package')
-    } finally {
-      setLoading(false)
-    }
+    createMutation.mutate({
+      client_id: formData.client_id,
+      package_type: formData.package_type,
+      package_name: formData.package_name,
+      total_hours: parseFloat(formData.total_hours),
+      price: parseFloat(formData.price),
+      currency: formData.currency,
+      billing_cycle: formData.billing_cycle,
+      start_date: new Date(formData.start_date).toISOString(),
+      end_date: new Date(formData.end_date).toISOString(),
+      auto_renew: formData.auto_renew,
+      features: {
+        priority_support: formData.priority_support,
+        support_24x7: formData.support_24x7,
+        dedicated_developer: formData.dedicated_developer,
+        response_time_sla: formData.response_time_sla,
+        max_concurrent_queries: parseInt(formData.max_concurrent_queries),
+      },
+    })
   }
 
   return (
@@ -329,7 +333,7 @@ export default function CreateMaintenancePackagePage() {
               type="button"
               onClick={() => navigate('/maintenance/packages')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -337,10 +341,10 @@ export default function CreateMaintenancePackagePage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Creating...' : 'Create Package'}</span>
+              <span>{createMutation.isPending ? 'Creating...' : 'Create Package'}</span>
             </button>
           </div>
         </form>

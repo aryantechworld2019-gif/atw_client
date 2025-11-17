@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, CreditCard, DollarSign } from 'lucide-react'
 import { paymentsAPI } from '../../services/apiService'
+import { showToast } from '../../utils/toast'
 
 type PaymentMethod = 'RAZORPAY' | 'STRIPE' | 'BANK_TRANSFER' | 'PAYPAL'
 
 export default function RecordPaymentPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     invoice_id: '',
     client_id: '',
@@ -22,49 +24,51 @@ export default function RecordPaymentPage() {
     card_last4: '',
   })
 
+  const createMutation = useMutation({
+    mutationFn: (data: any) => paymentsAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+      showToast.success('Payment recorded successfully!')
+      navigate('/payments')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to record payment')
+    },
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      const paymentData: any = {
-        invoice_id: formData.invoice_id,
-        client_id: formData.client_id,
-        amount: parseFloat(formData.amount),
-        currency: formData.currency,
-        payment_method: formData.payment_method,
-      }
-
-      // Add gateway details if provided
-      if (formData.gateway_payment_id) {
-        paymentData.gateway_payment_id = formData.gateway_payment_id
-      }
-      if (formData.gateway_order_id) {
-        paymentData.gateway_order_id = formData.gateway_order_id
-      }
-      if (formData.gateway_signature) {
-        paymentData.gateway_signature = formData.gateway_signature
-      }
-
-      // Add gateway response if card details provided
-      if (formData.card_network || formData.card_last4) {
-        paymentData.gateway_response = {
-          status: 'SUCCESS',
-          method: formData.payment_method,
-          card_network: formData.card_network || undefined,
-          card_last4: formData.card_last4 || undefined,
-        }
-      }
-
-      await paymentsAPI.create(paymentData)
-
-      alert('Payment recorded successfully!')
-      navigate('/payments')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to record payment')
-    } finally {
-      setLoading(false)
+    const paymentData: any = {
+      invoice_id: formData.invoice_id,
+      client_id: formData.client_id,
+      amount: parseFloat(formData.amount),
+      currency: formData.currency,
+      payment_method: formData.payment_method,
     }
+
+    // Add gateway details if provided
+    if (formData.gateway_payment_id) {
+      paymentData.gateway_payment_id = formData.gateway_payment_id
+    }
+    if (formData.gateway_order_id) {
+      paymentData.gateway_order_id = formData.gateway_order_id
+    }
+    if (formData.gateway_signature) {
+      paymentData.gateway_signature = formData.gateway_signature
+    }
+
+    // Add gateway response if card details provided
+    if (formData.card_network || formData.card_last4) {
+      paymentData.gateway_response = {
+        status: 'SUCCESS',
+        method: formData.payment_method,
+        card_network: formData.card_network || undefined,
+        card_last4: formData.card_last4 || undefined,
+      }
+    }
+
+    createMutation.mutate(paymentData)
   }
 
   return (
@@ -252,7 +256,7 @@ export default function RecordPaymentPage() {
               type="button"
               onClick={() => navigate('/payments')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -260,10 +264,10 @@ export default function RecordPaymentPage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Recording...' : 'Record Payment'}</span>
+              <span>{createMutation.isPending ? 'Recording...' : 'Record Payment'}</span>
             </button>
           </div>
         </form>
