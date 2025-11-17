@@ -1,39 +1,46 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X } from 'lucide-react'
 import { queriesAPI } from '../../services/apiService'
-import { QueryType, QueryPriority } from '../../types'
+import { showToast } from '../../utils/toast'
 
 export default function CreateQueryPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     client_id: '',
     title: '',
     description: '',
-    type: QueryType.BUG,
-    priority: QueryPriority.MEDIUM,
+    category: 'BUG',
+    priority: 'MEDIUM',
     estimated_hours: '',
+  })
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => queriesAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queries'] })
+      showToast.success('Query created successfully!')
+      navigate('/queries')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to create query')
+    },
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      await queriesAPI.create({
-        ...formData,
-        estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : undefined,
-      })
-
-      alert('Query created successfully!')
-      navigate('/queries')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to create query')
-    } finally {
-      setLoading(false)
-    }
+    createMutation.mutate({
+      client_id: formData.client_id,
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      priority: formData.priority,
+      estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : undefined,
+    })
   }
 
   return (
@@ -62,18 +69,18 @@ export default function CreateQueryPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type *
+                Category *
               </label>
               <select
                 required
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as QueryType })}
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="input-field"
               >
-                <option value={QueryType.BUG}>Bug</option>
-                <option value={QueryType.FEATURE_REQUEST}>Feature Request</option>
-                <option value={QueryType.SUPPORT}>Support</option>
-                <option value={QueryType.ENHANCEMENT}>Enhancement</option>
+                <option value="BUG">Bug</option>
+                <option value="FEATURE_REQUEST">Feature Request</option>
+                <option value="SUPPORT">Support</option>
+                <option value="ENHANCEMENT">Enhancement</option>
               </select>
             </div>
 
@@ -84,13 +91,13 @@ export default function CreateQueryPage() {
               <select
                 required
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as QueryPriority })}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                 className="input-field"
               >
-                <option value={QueryPriority.LOW}>Low</option>
-                <option value={QueryPriority.MEDIUM}>Medium</option>
-                <option value={QueryPriority.HIGH}>High</option>
-                <option value={QueryPriority.URGENT}>Urgent</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
               </select>
             </div>
 
@@ -146,7 +153,7 @@ export default function CreateQueryPage() {
               type="button"
               onClick={() => navigate('/queries')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -154,10 +161,10 @@ export default function CreateQueryPage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Creating...' : 'Create Query'}</span>
+              <span>{createMutation.isPending ? 'Creating...' : 'Create Query'}</span>
             </button>
           </div>
         </form>

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, Code2, DollarSign, Clock } from 'lucide-react'
 import { developersAPI } from '../../services/apiService'
+import { showToast } from '../../utils/toast'
 
 const COMMON_SKILLS = [
   'React',
@@ -35,7 +37,7 @@ const COMMON_SKILLS = [
 
 export default function AddDeveloperPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formData, setFormData] = useState({
     user_id: '',
     skills: [] as string[],
@@ -75,31 +77,32 @@ export default function AddDeveloperPage() {
     })
   }
 
+  const createMutation = useMutation({
+    mutationFn: (data: any) => developersAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['developers'] })
+      showToast.success('Developer created successfully!')
+      navigate('/developers')
+    },
+    onError: (error: any) => {
+      showToast.error(error.response?.data?.detail || 'Failed to create developer')
+    },
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
 
-    try {
-      if (formData.skills.length === 0) {
-        alert('Please select at least one skill')
-        setLoading(false)
-        return
-      }
-
-      await developersAPI.create({
-        user_id: formData.user_id,
-        skills: formData.skills,
-        hourly_rate: parseFloat(formData.hourly_rate),
-        availability_hours: parseFloat(formData.availability_hours),
-      })
-
-      alert('Developer created successfully!')
-      navigate('/developers')
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to create developer')
-    } finally {
-      setLoading(false)
+    if (formData.skills.length === 0) {
+      showToast.error('Please select at least one skill')
+      return
     }
+
+    createMutation.mutate({
+      user_id: formData.user_id,
+      skills: formData.skills,
+      hourly_rate: parseFloat(formData.hourly_rate),
+      availability_hours: parseFloat(formData.availability_hours),
+    })
   }
 
   return (
@@ -262,7 +265,7 @@ export default function AddDeveloperPage() {
               type="button"
               onClick={() => navigate('/developers')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -270,10 +273,10 @@ export default function AddDeveloperPage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={loading}
+              disabled={createMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Creating...' : 'Create Developer'}</span>
+              <span>{createMutation.isPending ? 'Creating...' : 'Create Developer'}</span>
             </button>
           </div>
         </form>
