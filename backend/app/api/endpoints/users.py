@@ -36,8 +36,9 @@ class UserResponse(BaseModel):
     phone: Optional[str]
     role: UserRole
     status: UserStatus
-    client_id: Optional[str]
-    is_verified: bool
+    is_active: bool
+    is_email_verified: bool
+    avatar_url: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -79,8 +80,9 @@ async def get_users(
             phone=user.phone,
             role=user.role,
             status=user.status,
-            client_id=str(user.client_id) if user.client_id else None,
-            is_verified=user.is_verified,
+            is_active=user.is_active,
+            is_email_verified=user.is_email_verified,
+            avatar_url=user.avatar_url,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -115,8 +117,9 @@ async def get_user(
         phone=user.phone,
         role=user.role,
         status=user.status,
-        client_id=str(user.client_id) if user.client_id else None,
-        is_verified=user.is_verified,
+        is_active=user.is_active,
+        is_email_verified=user.is_email_verified,
+        avatar_url=user.avatar_url,
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
@@ -142,12 +145,13 @@ async def create_user(
     # Create user
     new_user = User(
         email=user_data.email,
-        hashed_password=hashed_password,
+        password_hash=hashed_password,
         full_name=user_data.full_name,
         phone=user_data.phone,
         role=user_data.role,
         status=UserStatus.ACTIVE,
-        is_verified=True,  # Admin-created users are auto-verified
+        is_active=True,
+        is_email_verified=True,  # Admin-created users are auto-verified
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -205,8 +209,9 @@ async def update_user(
         phone=user.phone,
         role=user.role,
         status=user.status,
-        client_id=str(user.client_id) if user.client_id else None,
-        is_verified=user.is_verified,
+        is_active=user.is_active,
+        is_email_verified=user.is_email_verified,
+        avatar_url=user.avatar_url,
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
@@ -276,8 +281,9 @@ async def activate_user(
         phone=user.phone,
         role=user.role,
         status=user.status,
-        client_id=str(user.client_id) if user.client_id else None,
-        is_verified=user.is_verified,
+        is_active=user.is_active,
+        is_email_verified=user.is_email_verified,
+        avatar_url=user.avatar_url,
         created_at=user.created_at,
         updated_at=user.updated_at,
     )

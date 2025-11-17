@@ -6,6 +6,7 @@ from pydantic import EmailStr, Field, BaseModel
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from app.core.types import PyObjectId
 
 
 class UserRole(str, Enum):
@@ -15,6 +16,14 @@ class UserRole(str, Enum):
     CLIENT_OWNER = "CLIENT_OWNER"
     CLIENT_USER = "CLIENT_USER"
     DEVELOPER = "DEVELOPER"
+
+
+class UserStatus(str, Enum):
+    """User account status"""
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    SUSPENDED = "SUSPENDED"
+    PENDING = "PENDING"
 
 
 class TwoFAMethod(str, Enum):
@@ -63,7 +72,11 @@ class User(Document):
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
 
+    # Client Reference (for CLIENT_OWNER and CLIENT_USER roles)
+    client_id: Optional[PyObjectId] = None
+
     # Account Status
+    status: UserStatus = UserStatus.ACTIVE
     is_active: bool = True
     is_email_verified: bool = False
     is_phone_verified: bool = False
@@ -87,7 +100,11 @@ class User(Document):
         indexes = [
             "email",
             "role",
+            "status",
+            "client_id",
             [("is_active", 1), ("role", 1)],
+            [("status", 1), ("role", 1)],
+            [("client_id", 1), ("role", 1)],
         ]
 
     class Config:
