@@ -1,16 +1,7 @@
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/authStore'
-import { LayoutDashboard, Users, HelpCircle, LogOut, Package, FileText } from 'lucide-react'
+import Layout from '../../components/Layout'
+import { HelpCircle, Users, Package, FileText } from 'lucide-react'
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
-  const { user, clearAuth } = useAuthStore()
-
-  const handleLogout = () => {
-    clearAuth()
-    navigate('/login')
-  }
-
   const stats = [
     {
       title: 'Total Queries',
@@ -43,69 +34,15 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <LayoutDashboard className="w-8 h-8 text-primary-600" />
-              <h1 className="text-2xl font-bold text-gray-900">
-                Aryan Tech World
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="btn-secondary flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="py-4 px-3 border-b-2 border-primary-600 text-primary-600 font-medium"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => navigate('/clients')}
-              className="py-4 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium"
-            >
-              Clients
-            </button>
-            <button
-              onClick={() => navigate('/queries')}
-              className="py-4 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium"
-            >
-              Queries
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+    <Layout>
+      <div className="space-y-6">
+        <div>
           <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-          <p className="text-gray-600 mt-1">Welcome back, {user?.full_name}!</p>
+          <p className="text-gray-600 mt-1">Your business at a glance</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -171,7 +108,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   )
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Users, Plus, Search } from 'lucide-react'
+import Layout from '../../components/Layout'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
@@ -24,47 +25,25 @@ export default function ClientsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-            <button className="btn-primary flex items-center space-x-2">
-              <Plus className="w-4 h-4" />
-              <span>Add Client</span>
-            </button>
+    <Layout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+            <p className="text-gray-600 mt-1">Manage your client relationships</p>
           </div>
+          <button
+            onClick={() => navigate('/clients/add')}
+            className="btn-primary flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Client</span>
+          </button>
         </div>
-      </header>
 
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="py-4 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium"
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => navigate('/clients')}
-              className="py-4 px-3 border-b-2 border-primary-600 text-primary-600 font-medium"
-            >
-              Clients
-            </button>
-            <button
-              onClick={() => navigate('/queries')}
-              className="py-4 px-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium"
-            >
-              Queries
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filter */}
-        <div className="mb-6">
+        <div className="card">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -141,7 +120,7 @@ export default function ClientsPage() {
             </tbody>
           </table>
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   )
 }
