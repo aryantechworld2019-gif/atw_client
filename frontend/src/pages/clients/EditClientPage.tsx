@@ -1,14 +1,39 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Layout from '../../components/Layout'
 import { Save, X, Building2, Mail, Phone, MapPin } from 'lucide-react'
 import { clientsAPI } from '../../services/apiService'
 import { showToast } from '../../utils/toast'
 
-export default function AddClientPage() {
+interface ClientData {
+  id: string
+  company_name: string
+  industry: string
+  website?: string
+  contact_info: {
+    name: string
+    email: string
+    phone: string
+    designation: string
+  }
+  address: {
+    street: string
+    city: string
+    state: string
+    country: string
+    pincode: string
+  }
+  billing_email: string
+  tax_id?: string
+  status: string
+}
+
+export default function EditClientPage() {
   const navigate = useNavigate()
+  const { clientId } = useParams<{ clientId: string }>()
   const queryClient = useQueryClient()
+
   const [formData, setFormData] = useState({
     company_name: '',
     industry: '',
@@ -24,24 +49,57 @@ export default function AddClientPage() {
     pincode: '',
     billing_email: '',
     tax_id: '',
+    status: 'ACTIVE',
   })
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => clientsAPI.create(data),
+  // Fetch client data
+  const { data: client, isLoading } = useQuery<ClientData>({
+    queryKey: ['client', clientId],
+    queryFn: () => clientsAPI.getById(clientId!),
+    enabled: !!clientId,
+  })
+
+  // Update form when client data is loaded
+  useEffect(() => {
+    if (client) {
+      setFormData({
+        company_name: client.company_name,
+        industry: client.industry,
+        website: client.website || '',
+        contact_name: client.contact_info.name,
+        contact_email: client.contact_info.email,
+        contact_phone: client.contact_info.phone,
+        contact_designation: client.contact_info.designation,
+        street: client.address.street,
+        city: client.address.city,
+        state: client.address.state,
+        country: client.address.country,
+        pincode: client.address.pincode,
+        billing_email: client.billing_email,
+        tax_id: client.tax_id || '',
+        status: client.status,
+      })
+    }
+  }, [client])
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => clientsAPI.update(clientId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] })
-      showToast.success('Client created successfully!')
+      queryClient.invalidateQueries({ queryKey: ['client', clientId] })
+      showToast.success('Client updated successfully!')
       navigate('/clients')
     },
     onError: (error: any) => {
-      showToast.error(error.response?.data?.detail || 'Failed to create client')
+      showToast.error(error.response?.data?.detail || 'Failed to update client')
     },
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    createMutation.mutate({
+    updateMutation.mutate({
       company_name: formData.company_name,
       industry: formData.industry,
       website: formData.website || undefined,
@@ -60,15 +118,42 @@ export default function AddClientPage() {
       },
       billing_email: formData.billing_email,
       tax_id: formData.tax_id || undefined,
+      status: formData.status,
     })
+  }
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (!client) {
+    return (
+      <Layout>
+        <div className="text-center py-12">
+          <p className="text-red-600">Client not found</p>
+          <button
+            onClick={() => navigate('/clients')}
+            className="mt-4 btn-primary"
+          >
+            Back to Clients
+          </button>
+        </div>
+      </Layout>
+    )
   }
 
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Add New Client</h1>
-          <p className="text-gray-600 mt-1">Create a new client account</p>
+          <h1 className="text-3xl font-bold text-gray-900">Edit Client</h1>
+          <p className="text-gray-600 mt-1">Update client information</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -108,7 +193,7 @@ export default function AddClientPage() {
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Website
                 </label>
@@ -119,6 +204,22 @@ export default function AddClientPage() {
                   className="input-field"
                   placeholder="https://example.com"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status *
+                </label>
+                <select
+                  required
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="SUSPENDED">Suspended</option>
+                </select>
               </div>
             </div>
           </div>
@@ -309,7 +410,7 @@ export default function AddClientPage() {
               type="button"
               onClick={() => navigate('/clients')}
               className="btn-secondary flex items-center space-x-2"
-              disabled={createMutation.isPending}
+              disabled={updateMutation.isPending}
             >
               <X className="w-5 h-5" />
               <span>Cancel</span>
@@ -317,10 +418,10 @@ export default function AddClientPage() {
             <button
               type="submit"
               className="btn-primary flex items-center space-x-2"
-              disabled={createMutation.isPending}
+              disabled={updateMutation.isPending}
             >
               <Save className="w-5 h-5" />
-              <span>{createMutation.isPending ? 'Creating...' : 'Create Client'}</span>
+              <span>{updateMutation.isPending ? 'Saving...' : 'Save Changes'}</span>
             </button>
           </div>
         </form>

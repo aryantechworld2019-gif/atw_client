@@ -39,6 +39,11 @@ import CreateInvoicePage from './pages/invoices/CreateInvoicePage'
 import AssignDeveloperPage from './pages/queries/AssignDeveloperPage'
 import UpdateQueryStatusPage from './pages/queries/UpdateQueryStatusPage'
 
+// Edit Pages
+import EditClientPage from './pages/clients/EditClientPage'
+import EditDeveloperPage from './pages/developers/EditDeveloperPage'
+import EditQueryPage from './pages/queries/EditQueryPage'
+
 function App() {
   const { isAuthenticated } = useAuthStore()
 
@@ -88,6 +93,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/clients/:clientId/edit"
+          element={
+            <ProtectedRoute>
+              <EditClientPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Queries Routes */}
         <Route
@@ -122,6 +135,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/queries/:queryId/edit"
+          element={
+            <ProtectedRoute>
+              <EditQueryPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Developers Routes */}
         <Route
@@ -137,6 +158,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AddDeveloperPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developers/:developerId/edit"
+          element={
+            <ProtectedRoute>
+              <EditDeveloperPage />
             </ProtectedRoute>
           }
         />
