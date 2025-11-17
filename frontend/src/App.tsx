@@ -25,6 +25,10 @@ import SettingsSecurityPage from './pages/settings/SettingsSecurityPage'
 // Reports Pages
 import ReportsOverviewPage from './pages/reports/ReportsOverviewPage'
 
+// User Pages
+import UsersPage from './pages/users/UsersPage'
+import AddUserPage from './pages/users/AddUserPage'
+
 // Sub Pages (Add/Create forms)
 import AddDeveloperPage from './pages/developers/AddDeveloperPage'
 import AddClientPage from './pages/clients/AddClientPage'
@@ -133,6 +137,24 @@ function App() {
           element={
             <ProtectedRoute>
               <AddDeveloperPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Users Routes */}
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users/add"
+          element={
+            <ProtectedRoute>
+              <AddUserPage />
             </ProtectedRoute>
           }
         />
