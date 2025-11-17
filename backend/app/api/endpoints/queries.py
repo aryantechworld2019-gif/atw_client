@@ -203,7 +203,7 @@ async def update_query(
     query_data: QueryUpdate,
     current_user: User = Depends(get_current_user),
 ):
-    """Update a query"""
+    """Update a query (only admin or assigned developer)"""
     try:
         query_obj = await Query.get(ObjectId(query_id))
     except Exception:
@@ -216,6 +216,24 @@ async def update_query(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Query not found"
+        )
+
+    # Check permissions: only admin or assigned developer can update
+    is_admin = current_user.role in [UserRole.SUPER_ADMIN, UserRole.ADMIN]
+
+    # Check if current user is the assigned developer
+    is_assigned_developer = False
+    if query_obj.assigned_developer_id:
+        # Get developer profile for current user
+        from app.models.developer import Developer
+        developer = await Developer.find_one(Developer.user_id == PyObjectId(current_user.id))
+        if developer:
+            is_assigned_developer = (query_obj.assigned_developer_id == developer.id)
+
+    if not is_admin and not is_assigned_developer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin or assigned developer can update this query"
         )
 
     # Update fields

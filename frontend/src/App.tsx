@@ -31,6 +31,8 @@ import CreateQueryPage from './pages/queries/CreateQueryPage'
 import CreateMaintenancePackagePage from './pages/maintenance/CreateMaintenancePackagePage'
 import RecordPaymentPage from './pages/payments/RecordPaymentPage'
 import CreateInvoicePage from './pages/invoices/CreateInvoicePage'
+import AssignDeveloperPage from './pages/queries/AssignDeveloperPage'
+import UpdateQueryStatusPage from './pages/queries/UpdateQueryStatusPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -95,6 +97,22 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateQueryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/queries/assign"
+          element={
+            <ProtectedRoute>
+              <AssignDeveloperPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/queries/:queryId/update-status"
+          element={
+            <ProtectedRoute>
+              <UpdateQueryStatusPage />
             </ProtectedRoute>
           }
         />
