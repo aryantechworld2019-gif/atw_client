@@ -127,6 +127,9 @@ class Client(Document):
             "company_name",
             "status",
             "assigned_developers.developer_id",
+            [("status", 1), ("onboarded_at", -1)],  # Compound: active clients by date
+            [("company_name", "text")],  # Text search
+            [("created_at", -1)],  # Sort by creation date
         ]
 
     class Config:

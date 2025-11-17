@@ -17,4 +17,26 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  build: {
+    // Production optimizations
+    target: 'es2015',
+    minify: 'esbuild',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Code splitting for better caching
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ui: ['lucide-react', 'react-hot-toast'],
+          forms: ['react-hook-form', 'zod', '@hookform/resolvers'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
+  esbuild: {
+    // Remove console.log in production
+    drop: ['console', 'debugger'],
+  },
 })
