@@ -3,7 +3,7 @@ Query/Bug management endpoints
 """
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query as QueryParam
-from app.models.query import Query, QueryStatus, QueryPriority, QueryType
+from app.models.query import Query, QueryStatus, QueryPriority, QueryCategory
 from app.models.user import User, UserRole
 from app.api.dependencies.auth import get_current_user
 from app.core.types import PyObjectId
@@ -14,11 +14,18 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
+def generate_ticket_number() -> str:
+    """Generate a unique ticket number"""
+    now = datetime.utcnow()
+    # Format: QRY-YYYY-MM-DDHHMMSS
+    return f"QRY-{now.strftime('%Y-%m-%d%H%M%S')}"
+
+
 class QueryCreate(BaseModel):
     client_id: str
     title: str
     description: str
-    type: QueryType
+    category: QueryCategory
     priority: QueryPriority
     estimated_hours: Optional[float] = None
 
@@ -26,7 +33,7 @@ class QueryCreate(BaseModel):
 class QueryUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    type: Optional[QueryType] = None
+    category: Optional[QueryCategory] = None
     priority: Optional[QueryPriority] = None
     status: Optional[QueryStatus] = None
     assigned_developer_id: Optional[str] = None
@@ -40,7 +47,7 @@ class QueryResponse(BaseModel):
     client_id: str
     title: str
     description: str
-    type: QueryType
+    category: QueryCategory
     priority: QueryPriority
     status: QueryStatus
     assigned_developer_id: Optional[str]
@@ -102,7 +109,7 @@ async def get_queries(
             client_id=str(q.client_id),
             title=q.title,
             description=q.description,
-            type=q.type,
+            category=q.category,
             priority=q.priority,
             status=q.status,
             assigned_developer_id=str(q.assigned_developer_id) if q.assigned_developer_id else None,
@@ -125,10 +132,11 @@ async def create_query(
 ):
     """Create a new query"""
     new_query = Query(
+        ticket_number=generate_ticket_number(),
         client_id=PyObjectId(query_data.client_id),
         title=query_data.title,
         description=query_data.description,
-        type=query_data.type,
+        category=query_data.category,
         priority=query_data.priority,
         status=QueryStatus.OPEN,
         estimated_hours=query_data.estimated_hours,
@@ -144,7 +152,7 @@ async def create_query(
         client_id=str(new_query.client_id),
         title=new_query.title,
         description=new_query.description,
-        type=new_query.type,
+        category=new_query.category,
         priority=new_query.priority,
         status=new_query.status,
         assigned_developer_id=None,
@@ -183,7 +191,7 @@ async def get_query(
         client_id=str(query_obj.client_id),
         title=query_obj.title,
         description=query_obj.description,
-        type=query_obj.type,
+        category=query_obj.category,
         priority=query_obj.priority,
         status=query_obj.status,
         assigned_developer_id=str(query_obj.assigned_developer_id) if query_obj.assigned_developer_id else None,
@@ -256,7 +264,7 @@ async def update_query(
         client_id=str(query_obj.client_id),
         title=query_obj.title,
         description=query_obj.description,
-        type=query_obj.type,
+        category=query_obj.category,
         priority=query_obj.priority,
         status=query_obj.status,
         assigned_developer_id=str(query_obj.assigned_developer_id) if query_obj.assigned_developer_id else None,
