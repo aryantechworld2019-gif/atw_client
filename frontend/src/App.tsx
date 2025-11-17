@@ -29,6 +29,8 @@ import AddDeveloperPage from './pages/developers/AddDeveloperPage'
 import AddClientPage from './pages/clients/AddClientPage'
 import CreateQueryPage from './pages/queries/CreateQueryPage'
 import CreateMaintenancePackagePage from './pages/maintenance/CreateMaintenancePackagePage'
+import RecordPaymentPage from './pages/payments/RecordPaymentPage'
+import CreateInvoicePage from './pages/invoices/CreateInvoicePage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -156,7 +158,7 @@ function App() {
           path="/payments/record"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <RecordPaymentPage />
             </ProtectedRoute>
           }
         />
@@ -174,7 +176,7 @@ function App() {
           path="/invoices/create"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <CreateInvoicePage />
             </ProtectedRoute>
           }
         />
