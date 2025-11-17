@@ -26,6 +26,8 @@ import ReportsOverviewPage from './pages/reports/ReportsOverviewPage'
 
 // Sub Pages (Add/Create forms)
 import AddDeveloperPage from './pages/developers/AddDeveloperPage'
+import AddClientPage from './pages/clients/AddClientPage'
+import CreateQueryPage from './pages/queries/CreateQueryPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -71,7 +73,7 @@ function App() {
           path="/clients/add"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <AddClientPage />
             </ProtectedRoute>
           }
         />
@@ -89,7 +91,7 @@ function App() {
           path="/queries/create"
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <CreateQueryPage />
             </ProtectedRoute>
           }
         />
