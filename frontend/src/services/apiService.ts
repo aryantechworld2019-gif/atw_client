@@ -110,6 +110,38 @@ export const authAPI = {
   },
 }
 
+// Users API
+export const usersAPI = {
+  getAll: async (params?: any) => {
+    const response = await api.get('/api/v1/users', { params })
+    return response.data
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/api/v1/users/${id}`)
+    return response.data
+  },
+
+  create: async (data: any) => {
+    const response = await api.post('/api/v1/users', data)
+    return response.data
+  },
+
+  update: async (id: string, data: any) => {
+    const response = await api.put(`/api/v1/users/${id}`, data)
+    return response.data
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/api/v1/users/${id}`)
+  },
+
+  activate: async (id: string) => {
+    const response = await api.post(`/api/v1/users/${id}/activate`)
+    return response.data
+  },
+}
+
 // Maintenance Packages API
 export const maintenanceAPI = {
   getAll: async (params?: any) => {

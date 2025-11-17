@@ -19,7 +19,8 @@
     "zustand": "^4.4.7",
     "react-hook-form": "^7.48.2",
     "zod": "^3.22.4",
-    "@hookform/resolvers": "^3.3.2"
+    "@hookform/resolvers": "^3.3.2",
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from './store/authStore'
 
 // Auth Pages
@@ -44,6 +45,7 @@ function App() {
 
   return (
     <div className="min-h-screen">
+      <Toaster />
       <Routes>
         {/* Public Routes */}
         <Route
