@@ -228,3 +228,67 @@ export const timeLogsAPI = {
     await api.delete(`/api/v1/time-logs/${id}`)
   },
 }
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: async (params?: any) => {
+    const response = await api.get('/api/v1/notifications', { params })
+    return response.data
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/api/v1/notifications/${id}`)
+    return response.data
+  },
+
+  getUnreadCount: async () => {
+    const response = await api.get('/api/v1/notifications/unread-count')
+    return response.data
+  },
+
+  create: async (data: any) => {
+    const response = await api.post('/api/v1/notifications', data)
+    return response.data
+  },
+
+  markAsRead: async (id: string) => {
+    const response = await api.put(`/api/v1/notifications/${id}/read`)
+    return response.data
+  },
+
+  markAllAsRead: async () => {
+    await api.put('/api/v1/notifications/mark-all-read')
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/api/v1/notifications/${id}`)
+  },
+}
+
+// Audit Logs API
+export const auditLogsAPI = {
+  getAll: async (params?: any) => {
+    const response = await api.get('/api/v1/audit-logs', { params })
+    return response.data
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get(`/api/v1/audit-logs/${id}`)
+    return response.data
+  },
+
+  create: async (data: any) => {
+    const response = await api.post('/api/v1/audit-logs', data)
+    return response.data
+  },
+
+  getEntityAuditTrail: async (entityType: string, entityId: string, params?: any) => {
+    const response = await api.get(`/api/v1/audit-logs/entity/${entityType}/${entityId}`, { params })
+    return response.data
+  },
+
+  getUserActivity: async (userId: string, params?: any) => {
+    const response = await api.get(`/api/v1/audit-logs/user/${userId}/activity`, { params })
+    return response.data
+  },
+}

@@ -124,7 +124,7 @@ async def global_exception_handler(request, exc):
 
 
 # Import and include routers
-from app.api.endpoints import auth, clients, queries, developers, maintenance, payments, invoices, time_logs
+from app.api.endpoints import auth, clients, queries, developers, maintenance, payments, invoices, time_logs, notifications, audit_logs
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(clients.router, prefix="/api/v1/clients", tags=["Clients"])
 app.include_router(queries.router, prefix="/api/v1/queries", tags=["Queries"])
@@ -133,6 +133,8 @@ app.include_router(maintenance.router, prefix="/api/v1/maintenance", tags=["Main
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
 app.include_router(invoices.router, prefix="/api/v1/invoices", tags=["Invoices"])
 app.include_router(time_logs.router, prefix="/api/v1/time-logs", tags=["Time Logs"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notifications"])
+app.include_router(audit_logs.router, prefix="/api/v1/audit-logs", tags=["Audit Logs"])
 
 
 if __name__ == "__main__":
